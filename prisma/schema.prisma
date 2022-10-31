@@ -1,0 +1,43 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model cameraDB {
+  camId String @id @default(uuid())
+  camName String 
+  camPosition String 
+  camBuilding String
+  camCount String
+}
+
+model UserDB {
+  rollNo String @unique()
+  username String 
+  fContactOne String?
+  fContactTwo String?
+  fContactThree String?
+  logs UserDBOnLogDB[]
+}
+
+model LogDB {
+  logId String @id @default(uuid())
+  logPosition String
+  logAt DateTime @default(now())
+  users UserDBOnLogDB[]
+}
+
+model UserDBOnLogDB{
+  user UserDB @relation(fields: [rollNo], references: [rollNo])
+  rollNo String
+  log LogDB @relation(fields: [logId], references: [logId])
+  logId String
+  assignedAt DateTime @default(now())
+  @@id([rollNo, logId])
+}
