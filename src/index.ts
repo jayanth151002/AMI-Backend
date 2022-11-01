@@ -11,8 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 const port = process.env.PORT;
 
 app.get("/", async (req: Request, res: Response) => {
-  const cam = await prisma.cameraDB.findMany({});
-  res.json(cam);
+  
 });
 
 app.listen(port, () => {
