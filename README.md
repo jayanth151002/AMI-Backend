@@ -1,6 +1,6 @@
 # AMI-Challenge
 
-##Technical Stacks used:
+## Technical Stacks used:
 1. Node JS with Typescript
 2. PostgreSQL
 3. Express
