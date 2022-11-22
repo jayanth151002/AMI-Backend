@@ -1,7 +1,8 @@
 import AWS from 'aws-sdk';
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
-import config from "../aws.config"
+import config from "./aws.config"
+
 dotenv.config();
 
 AWS.config.update(config);
@@ -28,7 +29,6 @@ app.get("/", async (req: Request, res: Response) => {
       });
     } else {
       const { Items } = data;
-      console.log(Items)
       res.send({
         success: true,
         movies: Items
@@ -36,6 +36,7 @@ app.get("/", async (req: Request, res: Response) => {
     }
   });
 })
+
 
 app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at https://localhost:${port}`);
