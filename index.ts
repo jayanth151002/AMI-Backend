@@ -2,7 +2,6 @@ import AWS from 'aws-sdk';
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import config from "./aws.config"
-
 dotenv.config();
 
 AWS.config.update(config);
