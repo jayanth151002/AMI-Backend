@@ -1,8 +1,8 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import findNearestCameras from "./utils/findNearestCameras";
-import updatedCamObj from "./types/updatedCamObj";
+import findNearestCameras from "./src/utils/findNearestCameras";
+import updatedCamObj from "./src/types/updatedCamObj";
 
 const prisma = new PrismaClient();
 dotenv.config();
