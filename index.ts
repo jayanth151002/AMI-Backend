@@ -2,6 +2,8 @@ import AWS from 'aws-sdk';
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import config from "./aws.config"
+import findNearestCamera from "./src/utils/findNearestCameras";
+import camObj from './src/types/camObj';
 dotenv.config();
 
 AWS.config.update(config);
@@ -18,7 +20,7 @@ app.get("/", async (req: Request, res: Response) => {
     TableName: "cameraDB",
   };
 
-  docClient.scan(params, function (err, data) {
+  docClient.scan(params, (err, data) => {
 
     if (err) {
       console.log(err)
@@ -27,11 +29,9 @@ app.get("/", async (req: Request, res: Response) => {
         message: err
       });
     } else {
-      const { Items } = data;
-      res.send({
-        success: true,
-        movies: Items
-      });
+      const camData: camObj[] = data.Items as camObj[];
+      const nearestCameras = findNearestCamera(camData);
+      res.send(nearestCameras)
     }
   });
 })

@@ -28,14 +28,15 @@ const findNearestCameras = (cameras: camObj[]) => {
     // returns an array containing 10 nearest cameras with distance
 
     // const [lat1, lng1]: number[] = getPosition()
-    const [lat1, lng1]: number[] = [12.9985168,80.2430987]        // Ganga 366 geolocation
+    const [lat1, lng1]: number[] = [12.987310959293936, 80.23900588291403]        // Ganga 366 geolocation 
     const updatedCamData = cameras.map((cam) => {
-        const [lat2, lng2]: number[] = [JSON.parse(cam.camPosition).lattitude, JSON.parse(cam.camPosition).longitude]
+        const [lat2, lng2]: number[] = [Number(JSON.parse(cam.camPosition).latitude), Number(JSON.parse(cam.camPosition).longitude)]
         const distance: number = getGeoDistance(lat1, lat2, lng1, lng2)
         return { camName: cam.camName, camPosition: cam.camPosition, camBuilding: cam.camBuilding, camCount: cam.camCount, distance: distance }
     })
     updatedCamData.sort((a: updatedCamObj, b: updatedCamObj) => a.distance - b.distance)
     return updatedCamData.slice(0, 10)
+    
 }
 
 export default findNearestCameras
