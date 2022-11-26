@@ -1,12 +1,6 @@
 import camObj from "../types/camObj"
 import updatedCamObj from "../types/updatedCamObj"
 
-const getPosition = () => {                         //Simulate getting user's position
-    const lat: number = 12.9 + Math.random() / 10
-    const lng: number = 80.2 + Math.random() / 10
-    return [lat, lng]
-}
-
 const getGeoDistance = (lat1: number, lat2: number, lng1: number, lng2: number) => {            //Function to calculate distance between two geolocations
     lat1 = lat1 / 57.29577951;              // convert to radians
     lat2 = lat2 / 57.29577951
@@ -22,13 +16,12 @@ const getGeoDistance = (lat1: number, lat2: number, lng1: number, lng2: number) 
     return dist;
 }
 
-const findNearestCameras = (cameras: camObj[]) => {
+const findNearestCameras = async (cameras: camObj[],lat1:number,lng1:number) => {
 
     // Function to calculate distance between user's position and all cameras and 
     // returns an array containing 10 nearest cameras with distance
 
-    // const [lat1, lng1]: number[] = getPosition()
-    const [lat1, lng1]: number[] = [12.987310959293936, 80.23900588291403]        // Ganga 366 geolocation 
+    // const [lat1, lng1]: number[] = [12.987310, 80.239005]        // Ganga 366 geolocation 
     const updatedCamData = cameras.map((cam) => {
         const [lat2, lng2]: number[] = [Number(JSON.parse(cam.camPosition).latitude), Number(JSON.parse(cam.camPosition).longitude)]
         const distance: number = getGeoDistance(lat1, lat2, lng1, lng2)
