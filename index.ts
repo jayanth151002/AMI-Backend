@@ -14,6 +14,102 @@ app.use(express.urlencoded({ extended: true }));
 
 const port = process.env.PORT;
 
+app.get("/signin", async (req: Request, res: Response) => {
+  const rollNo = req.body.rollNo;
+  const db = new AWS.DynamoDB.DocumentClient();
+  const params = {
+    TableName: "userDB",
+    Key: {
+      "rollNo": rollNo
+    }
+  };
+  db.get(params, async (err, data) => {
+    if (err) {
+      res.status(400).send({
+        msg: "Error in signing in",
+        err:err,
+        success: false
+      });
+    }
+    else {
+      res.status(200).send({
+        msg: "Signed in successfully",
+        success: true,
+        data: data.Item
+      });
+    }
+  })
+})
+
+app.post("/signup", async (req: Request, res: Response) => {
+  const { name, rollNo, phNo } = req.body;
+  const db = new AWS.DynamoDB.DocumentClient();
+  const params = {
+    TableName: "userDB",
+    Item: {
+      "rollNo": rollNo,
+      "name": name,
+      "phNo": phNo,
+    }
+  };
+
+  db.put(params, async (err, data) => {
+    if (err) {
+      res.status(400).send({
+        msg: "Error in signup",
+        success: false,
+        err: err
+      })
+    }
+    else {
+      res.status(200).send({
+        msg: "Signup successful",
+        success: true
+      })
+    }
+  });
+})
+
+app.post("/add-friends", async (req: Request, res: Response) => {
+  const { rollNo, fName1, fRollNo1, fPhNo1, fName2, fRollNo2, fPhNo2 } = req.body;
+  const db = new AWS.DynamoDB.DocumentClient();
+  const params = {
+    TableName: "userDB",
+    Key: {
+      rollNo: rollNo
+    },
+    UpdateExpression: 'set friends= :f',
+    ExpressionAttributeValues: {
+      ':f': {
+        "f1": {
+          "fName1": fName1,
+          "fRollNo1": fRollNo1,
+          "fPhNo1": fPhNo1
+        },
+        "f2": {
+          "fName2": fName2,
+          "fRollNo2": fRollNo2,
+          "fPhNo2": fPhNo2
+        }
+      }
+    }
+  };
+  db.update(params, async (err, data) => {
+    if (err) {
+      res.status(400).send({
+        msg: "Error in adding friends",
+        success: false
+      })
+    }
+    else {
+      res.status(200).send({
+        msg: "Friends added successfully",
+        success: true
+      })
+    }
+  })
+})
+
 app.post("/log", async (req: Request, res: Response) => {
   const { rollNo, lat, long } = req.body;
   await addLog(rollNo, lat, long)
