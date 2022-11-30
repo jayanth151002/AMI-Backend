@@ -1,23 +1,6 @@
 import AWS from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
-
-const getTimestamp = () => {
-    const date = new Date();
-    const formatData = (input: number) => {
-        if (input > 9) {
-            return input;
-        } else return `0${input}`;
-    };
-    const format = {
-        dd: formatData(date.getDate()),
-        mm: formatData(date.getMonth() + 1),
-        yyyy: date.getFullYear(),
-        HH: formatData(date.getHours()),
-        MM: formatData(date.getMinutes()),
-        SS: formatData(date.getSeconds()),
-    };
-    return `${format.dd}/${format.mm}/${format.yyyy} ${format.HH}:${format.MM}:${format.SS}`
-}
+import getTimestamp from './getTimestamp';
 
 const addLog = async (rollNo: string, lat: string, long: string) => {
     const db = new AWS.DynamoDB.DocumentClient();
