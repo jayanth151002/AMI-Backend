@@ -234,7 +234,6 @@ app.get('/get-nearest-cameras', async (req: Request, res: Response) => {
   db.scan(params, async (err, data) => {
 
     if (err) {
-      console.log(err)
       res.send({
         success: false,
         msg: "Error while fetching data"
