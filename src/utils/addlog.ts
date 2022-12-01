@@ -16,12 +16,17 @@ const addLog = async (rollNo: string, lat: string, long: string) => {
         }
     };
 
-    db.put(params, async (err, data) => {
-        if (err) {
-            return err
-        }
-        else return data
-    });
+    try {
+        db.put(params);
+        return new Promise((resolve, reject) => {
+            resolve(params.Item as any);
+        })
+    }
+    catch (err) {
+        return new Promise((resolve, reject) => {
+            reject(err);
+        })
+    }
 }
 
 export default addLog

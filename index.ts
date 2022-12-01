@@ -8,6 +8,8 @@ import verifyUser from "./src/utils/verifyUser";
 import camObj from './src/types/camObj';
 import addLog from './src/utils/addlog';
 import getTimestamp from './src/utils/getTimestamp';
+import http from 'http'
+import { Server, Socket } from 'socket.io';
 dotenv.config();
 
 AWS.config.update(config);
@@ -15,6 +17,19 @@ const app: Express = express();
 app.use(express.json());
 app.use(cors())
 app.use(express.urlencoded({ extended: true }));
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+})
+
+io.on("connection", (socket: Socket) => {
+  console.log("Connected to client");
+});
 
 const port = process.env.PORT;
 
@@ -189,20 +204,24 @@ app.post("/log", async (req: Request, res: Response) => {
       success: false
     });
   }
+
   verifyUser(rollNo)
     .then(response => {
       addLog(rollNo, lat, long)
+        .then((log) => {
+          io.emit("connected", {profile:response,log:log});
+          res.status(200).send({
+            success: true,
+            msg: "Successfully logged",
+            data: response
+          })
+        })
         .catch((err) => {
           res.status(400).send({
             success: false,
             msg: "Error while adding log"
           })
         })
-      res.status(200).send({
-        success: true,
-        msg: "Successfully logged",
-        data: response
-      })
     })
     .catch(err => {
       res.status(400).send({
@@ -292,7 +311,4 @@ app.post('/get-profile', async (req: Request, res: Response) => {
   });
 })
 
-
-app.listen(port, () => {
-  console.log(`⚡️[server]: Server is running at https://localhost:${port}`);
-});
+server.listen(port, () => console.log(`Listening on port ${port}`));
