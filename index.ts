@@ -91,6 +91,16 @@ app.post("/signup", async (req: Request, res: Response) => {
           name: name,
           rollNo: rollNo,
           phNo: phNo,
+          f1: {
+            fName1: "",
+            fPhNo1: "",
+            fRollNo1: ""
+          },
+          f2: {
+            fName2: "",
+            fPhNo2: "",
+            fRollNo2: ""
+          },
           timestamp: getTimestamp()
         }
       };
@@ -190,7 +200,8 @@ app.post("/log", async (req: Request, res: Response) => {
         })
       res.status(200).send({
         success: true,
-        msg: "Successfully logged"
+        msg: "Successfully logged",
+        data: response
       })
     })
     .catch(err => {
@@ -223,7 +234,7 @@ app.get('/get-logs', async (req: Request, res: Response) => {
   });
 })
 
-app.get('/get-nearest-cameras', async (req: Request, res: Response) => {
+app.post('/get-nearest-cameras', async (req: Request, res: Response) => {
   const { lat, long } = req.body;
   const db = new AWS.DynamoDB.DocumentClient();
 
@@ -245,6 +256,37 @@ app.get('/get-nearest-cameras', async (req: Request, res: Response) => {
         success: true,
         msg: "Successfully fetched nearest cameras",
         data: nearestCameras
+      })
+    }
+  });
+})
+
+app.post('/get-profile', async (req: Request, res: Response) => {
+  const { rollNo } = req.body;
+  if (rollNo === '' || rollNo === undefined || rollNo === null)
+    res.status(400).send({
+      success: false,
+      msg: "Error while fetching profile"
+    })
+  const db = new AWS.DynamoDB.DocumentClient();
+  const params = {
+    TableName: "userDB",
+    Key: {
+      rollNo: rollNo
+    }
+  };
+  db.get(params, async (err, data) => {
+    if (err) {
+      res.status(400).send({
+        success: false,
+        msg: "Error while fetching profile"
+      })
+    }
+    else {
+      res.status(200).send({
+        success: true,
+        msg: "Successfully fetched profile",
+        data: data.Item
       })
     }
   });
