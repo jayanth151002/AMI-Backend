@@ -231,6 +231,57 @@ app.post("/add-friend", async (req: Request, res: Response) => {
     });
 });
 
+app.post("/edit-friend", async (req: Request, res: Response) => {
+  const { rollNo, frndData } = req.body;
+  if (rollNo === '' || frndData === '' || rollNo === undefined || frndData === undefined || rollNo === null || frndData === null) {
+    res.status(400).send({
+      msg: "Error in editing friends",
+      err: "new Error()",
+      success: false
+    });
+  }
+  verifyUser(rollNo)
+    .then(response => {
+      const db = new AWS.DynamoDB.DocumentClient();
+      const params = {
+        TableName: "userDB",
+        Key: {
+          rollNo: rollNo
+        },
+        UpdateExpression: 'set frndData= :f',
+        ExpressionAttributeValues: {
+          ':f': {
+            "fName": frndData.fName,
+            "fRollNo": frndData.fRollNo,
+            "fPhNo": frndData.fPhNo
+          }
+        }
+      };
+      db.update(params, async (err, data) => {
+        if (err) {
+          res.status(400).send({
+            err: err,
+            msg: "Error while editing friends",
+            success: false
+          })
+        }
+        else {
+          res.status(200).send({
+            msg: "Friends edited successfully",
+            success: true
+          })
+        }
+      })
+    })
+    .catch(error => {
+      res.status(400).send({
+        msg: "Unauthorized access",
+        err: error,
+        success: false
+      });
+    })
+})
+
 app.post("/log", async (req: Request, res: Response) => {
   const { rollNo, lat, long } = req.body;
   if (
@@ -299,6 +350,12 @@ app.get("/get-logs", async (req: Request, res: Response) => {
 
 app.post("/get-nearest-cameras", async (req: Request, res: Response) => {
   const { lat, long } = req.body;
+  if (lat === '' || long === '' || lat === undefined || long === undefined || lat === null || long === null) {
+    res.status(400).send({
+      success: false,
+      msg: "Error while fetching nearest cameras"
+    })
+  }
   const db = new AWS.DynamoDB.DocumentClient();
 
   const params = {
