@@ -5,9 +5,11 @@ import cors from "cors";
 import config from "./aws.config";
 import findNearestCamera from "./src/utils/findNearestCameras";
 import verifyUser from "./src/utils/verifyUser";
-import camObj from "./src/types/camObj";
-import addLog from "./src/utils/addlog";
-import getTimestamp from "./src/utils/getTimestamp";
+import camObj from './src/types/camObj';
+import addLog from './src/utils/addlog';
+import getTimestamp from './src/utils/getTimestamp';
+import http from 'http'
+import { Server, Socket } from 'socket.io';
 dotenv.config();
 
 AWS.config.update(config);
@@ -15,6 +17,19 @@ const app: Express = express();
 app.use(express.json());
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+})
+
+io.on("connection", (socket: Socket) => {
+  console.log("Connected to client");
+});
 
 const port = process.env.PORT;
 
@@ -67,18 +82,8 @@ app.post("/signin", async (req: Request, res: Response) => {
 });
 
 app.post("/signup", async (req: Request, res: Response) => {
-  const { name, rollNo, phNo } = req.body;
-  if (
-    name === "" ||
-    rollNo === "" ||
-    phNo === "" ||
-    name === undefined ||
-    rollNo === undefined ||
-    phNo === undefined ||
-    name === null ||
-    rollNo === null ||
-    phNo === null
-  ) {
+  const { name, rollNo, id } = req.body;
+  if (name === '' || rollNo === '' || name === undefined || rollNo === undefined || name === null || rollNo === null || id === '' || id === undefined || id === null) {
     res.status(400).send({
       msg: "Error in signing up",
       err: new Error("Empty fields"),
@@ -99,9 +104,14 @@ app.post("/signup", async (req: Request, res: Response) => {
         Item: {
           name: name,
           rollNo: rollNo,
-          phNo: phNo,
-          timestamp: getTimestamp(),
-        },
+          id: id,
+          frndData: {
+            fName: [],
+            fPhNo: [],
+            fRollNo: []
+          },
+          timestamp: getTimestamp()
+        }
       };
 
       db.put(params, (err, data) => {
@@ -121,32 +131,9 @@ app.post("/signup", async (req: Request, res: Response) => {
     });
 });
 
-app.post("/add-friends", async (req: Request, res: Response) => {
-  const { rollNo, fName1, fRollNo1, fPhNo1, fName2, fRollNo2, fPhNo2 } =
-    req.body;
-  if (
-    rollNo === "" ||
-    fName1 === "" ||
-    fRollNo1 === "" ||
-    fPhNo1 === "" ||
-    fName2 === "" ||
-    fRollNo2 === "" ||
-    fPhNo2 === "" ||
-    rollNo === undefined ||
-    fName1 === undefined ||
-    fRollNo1 === undefined ||
-    fPhNo1 === undefined ||
-    fName2 === undefined ||
-    fRollNo2 === undefined ||
-    fPhNo2 === undefined ||
-    rollNo === null ||
-    fName1 === null ||
-    fRollNo1 === null ||
-    fPhNo1 === null ||
-    fName2 === null ||
-    fRollNo2 === null ||
-    fPhNo2 === null
-  ) {
+app.post("/add-friend", async (req: Request, res: Response) => {
+  const { rollNo, fName, fRollNo, fPhNo } = req.body;
+  if (rollNo === '' || fName === '' || fRollNo === '' || fPhNo === '' || rollNo === undefined || fName === undefined || fRollNo === undefined || fPhNo === undefined || rollNo === null || fName === null || fRollNo === null || fPhNo === null) {
     res.status(400).send({
       msg: "Error in adding friends",
       err: new Error("Empty fields"),
@@ -159,35 +146,61 @@ app.post("/add-friends", async (req: Request, res: Response) => {
       const params = {
         TableName: "userDB",
         Key: {
-          rollNo: rollNo,
-        },
-        UpdateExpression: "set friends= :f",
-        ExpressionAttributeValues: {
-          ":f": {
-            f1: {
-              fName1: fName1,
-              fRollNo1: fRollNo1,
-              fPhNo1: fPhNo1,
-            },
-            f2: {
-              fName2: fName2,
-              fRollNo2: fRollNo2,
-              fPhNo2: fPhNo2,
-            },
-          },
-        },
+          rollNo: rollNo
+        }
       };
-      db.update(params, async (err, data) => {
+      db.get(params, async (err, data) => {
+        console.log(data)
         if (err) {
           res.status(400).send({
-            msg: "Error in adding friends",
             success: false,
-          });
-        } else {
-          res.status(200).send({
-            msg: "Friends added successfully",
-            success: true,
-          });
+            msg: "Error while fetching profile"
+          })
+        }
+        else {
+          if (data?.Item?.frndData.fName.length === 3) {
+            res.status(400).send({
+              success: false,
+              msg: "Maximum number of friends added"
+            })
+          }
+          else if (data?.Item?.frndData.fRollNo.includes(fRollNo)) {
+            res.status(400).send({
+              success: false,
+              msg: "Friend already added"
+            })
+          }
+          else {
+            const params = {
+              TableName: "userDB",
+              Key: {
+                rollNo: rollNo
+              },
+              UpdateExpression: 'set frndData= :f',
+              ExpressionAttributeValues: {
+                ':f': {
+                  "fName": [...data?.Item?.frndData.fName, fName],
+                  "fRollNo": [...data?.Item?.frndData.fRollNo, fRollNo],
+                  "fPhNo": [...data?.Item?.frndData.fPhNo, fPhNo]
+                }
+              }
+            };
+            db.update(params, async (err, data) => {
+              if (err) {
+                res.status(400).send({
+                  err: err,
+                  msg: "Error while adding friends",
+                  success: false
+                })
+              }
+              else {
+                res.status(200).send({
+                  msg: "Friends added successfully",
+                  success: true
+                })
+              }
+            })
+          }
         }
       });
     })
@@ -220,17 +233,22 @@ app.post("/log", async (req: Request, res: Response) => {
     });
   }
   verifyUser(rollNo)
-    .then((response) => {
-      addLog(rollNo, lat, long).catch((err) => {
-        res.status(400).send({
-          success: false,
-          msg: "Error while adding log",
-        });
-      });
-      res.status(200).send({
-        success: true,
-        msg: "Successfully logged",
-      });
+    .then(response => {
+      addLog(rollNo, lat, long)
+        .then((log) => {
+          io.emit("connected", { profile: response, log: log });
+          res.status(200).send({
+            success: true,
+            msg: "Successfully logged",
+            data: response
+          })
+        })
+        .catch((err) => {
+          res.status(400).send({
+            success: false,
+            msg: "Error while adding log"
+          })
+        })
     })
     .catch((err) => {
       res.status(400).send({
@@ -261,7 +279,7 @@ app.get("/get-logs", async (req: Request, res: Response) => {
   });
 });
 
-app.post("/get-nearest-cameras", async (req: Request, res: Response) => {
+app.post('/get-nearest-cameras', async (req: Request, res: Response) => {
   const { lat, long } = req.body;
   const db = new AWS.DynamoDB.DocumentClient();
 
@@ -288,8 +306,37 @@ app.post("/get-nearest-cameras", async (req: Request, res: Response) => {
       });
     }
   });
-});
+})
 
-app.listen(port, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-});
+app.post('/get-profile', async (req: Request, res: Response) => {
+  const { rollNo } = req.body;
+  if (rollNo === '' || rollNo === undefined || rollNo === null)
+    res.status(400).send({
+      success: false,
+      msg: "Error while fetching profile"
+    })
+  const db = new AWS.DynamoDB.DocumentClient();
+  const params = {
+    TableName: "userDB",
+    Key: {
+      rollNo: rollNo
+    }
+  };
+  db.get(params, async (err, data) => {
+    if (err) {
+      res.status(400).send({
+        success: false,
+        msg: "Error while fetching profile"
+      })
+    }
+    else {
+      res.status(200).send({
+        success: true,
+        msg: "Successfully fetched profile",
+        data: data.Item
+      })
+    }
+  });
+})
+
+server.listen(port, () => console.log(`Listening on port ${port}`));
