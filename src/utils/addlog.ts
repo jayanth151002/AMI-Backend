@@ -1,6 +1,5 @@
 import AWS from 'aws-sdk';
 import { v4 as uuidv4 } from 'uuid';
-import getTimestamp from './getTimestamp';
 
 const addLog = async (rollNo: string, lat: string, long: string) => {
     const db = new AWS.DynamoDB.DocumentClient();
@@ -12,7 +11,7 @@ const addLog = async (rollNo: string, lat: string, long: string) => {
             "rollNo": rollNo,
             "lat": lat,
             "long": long,
-            "timestamp": getTimestamp()
+            "timestamp": new Date().toLocaleString(undefined, {timeZone: 'Asia/Kolkata'})
         }
     };
 

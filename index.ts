@@ -7,7 +7,6 @@ import findNearestCamera from "./src/utils/findNearestCameras";
 import verifyUser from "./src/utils/verifyUser";
 import camObj from "./src/types/camObj";
 import addLog from "./src/utils/addlog";
-import getTimestamp from "./src/utils/getTimestamp";
 import http from "http";
 import { Server, Socket } from "socket.io";
 dotenv.config();
@@ -109,7 +108,7 @@ app.post("/signup", async (req: Request, res: Response) => {
             fPhNo: [],
             fRollNo: [],
           },
-          timestamp: getTimestamp(),
+          timestamp: new Date().toLocaleString(undefined, {timeZone: 'Asia/Kolkata'}),
         },
       };
 
@@ -223,7 +222,7 @@ app.post("/add-friend", async (req: Request, res: Response) => {
 
 app.post("/edit-friend", async (req: Request, res: Response) => {
   const { rollNo, frndData } = req.body;
-  if (rollNo === '' || frndData === '' || rollNo === undefined || frndData === undefined || rollNo === null || frndData === null) {
+  if (rollNo === '' || frndData === '' || rollNo === undefined || frndData === undefined || rollNo === null || frndData === null || frndData.fName.length !== frndData.fRollNo.length || frndData.fName.length !== frndData.fPhNo.length || frndData.fRollNo.length !== frndData.fPhNo.length) {
     res.status(400).send({
       msg: "Error in editing friends",
       err: "new Error()",
