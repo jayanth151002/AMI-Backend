@@ -83,8 +83,8 @@ app.post("/signin", async (req: Request, res: Response) => {
 })
 
 app.post("/signup", async (req: Request, res: Response) => {
-  const { name, rollNo, id } = req.body;
-  if (name === '' || rollNo === '' || name === undefined || rollNo === undefined || name === null || rollNo === null || id === '' || id === undefined || id === null) {
+  const { name, rollNo } = req.body;
+  if (name === '' || rollNo === '' || name === undefined || rollNo === undefined || name === null || rollNo === null) {
     res.status(400).send({
       msg: "Error in signing up",
       err: new Error("Empty fields"),
@@ -105,11 +105,10 @@ app.post("/signup", async (req: Request, res: Response) => {
         Item: {
           name: name,
           rollNo: rollNo,
-          id: id,
           frndData: {
             fName: [],
             fPhNo: [],
-            fRollNo: []
+            fRollNo: [],
           },
           timestamp: getTimestamp()
         }
@@ -126,6 +125,7 @@ app.post("/signup", async (req: Request, res: Response) => {
         else {
           res.status(200).send({
             msg: "Signed up successfully",
+            data: params.Item,
             success: true
           });
         }
@@ -152,7 +152,6 @@ app.post("/add-friend", async (req: Request, res: Response) => {
         }
       };
       db.get(params, async (err, data) => {
-        console.log(data)
         if (err) {
           res.status(400).send({
             success: false,
@@ -183,7 +182,7 @@ app.post("/add-friend", async (req: Request, res: Response) => {
                 ':f': {
                   "fName": [...data?.Item?.frndData.fName, fName],
                   "fRollNo": [...data?.Item?.frndData.fRollNo, fRollNo],
-                  "fPhNo": [...data?.Item?.frndData.fPhNo, fPhNo]
+                  "fPhNo": [...data?.Item?.frndData.fPhNo, fPhNo],
                 }
               }
             };
@@ -197,7 +196,7 @@ app.post("/add-friend", async (req: Request, res: Response) => {
               }
               else {
                 res.status(200).send({
-                  msg: "Friends added successfully",
+                  msg: "Friend added successfully",
                   success: true
                 })
               }
@@ -251,7 +250,7 @@ app.post("/edit-friend", async (req: Request, res: Response) => {
         }
         else {
           res.status(200).send({
-            msg: "Friends edited successfully",
+            msg: "Friend edited successfully",
             success: true
           })
         }
@@ -383,6 +382,74 @@ app.post('/get-profile', async (req: Request, res: Response) => {
         msg: "Successfully fetched profile",
         data: data.Item
       })
+    }
+  });
+})
+
+app.post('/get-friends-id', async (req: Request, res: Response) => {
+  const { rollNo } = req.body;
+  if (rollNo === '' || rollNo === undefined || rollNo === null)
+    res.status(400).send({
+      success: false,
+      msg: "Error while fetching profile"
+    })
+  const db = new AWS.DynamoDB.DocumentClient();
+  const params = {
+    TableName: "userDB",
+    Key: {
+      rollNo: rollNo
+    }
+  };
+  db.get(params, async (err, data) => {
+    if (err) {
+      res.status(400).send({
+        success: false,
+        msg: "Error while fetching profile"
+      })
+    }
+    else {
+      const frndRollNo: string[] = (data.Item as any).frndData.fRollNo
+      let frndId: any[] = []
+      if (frndRollNo.length !== 0) {
+        const promises: any = []
+        frndRollNo.map(rNo => {
+          promises.push(new Promise((resolve, reject) => {
+            const params = {
+              TableName: "userDB",
+              Key: {
+                rollNo: rNo
+              }
+            };
+            db.get(params, async (err, frndProfile) => {
+              if (err) {
+                reject(err)
+              }
+              else {
+                if (JSON.stringify(frndProfile) === '{}')
+                  frndId.push({ fRollNo: rNo, fId: '' })
+                else {
+                  frndId.push({ fRollNo: rNo, fId: (frndProfile.Item as any).id })
+                }
+                resolve(frndId[frndId.length - 1])
+              }
+            });
+          }))
+        })
+        const resp = Promise.all(promises)
+        resp.then(() => {
+          res.status(200).send({
+            success: true,
+            msg: "Successfully fetched id",
+            data: frndId
+          })
+        })
+          .catch(err => {
+            res.status(400).send({
+              success: false,
+              msg: "Error while fetching id"
+            })
+          })
+      }
     }
   });
 })
